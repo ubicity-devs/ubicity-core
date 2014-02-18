@@ -1,7 +1,5 @@
-
-package at.ac.ait.ubicity.core;
 /**
-    Copyright (C) 2013  AIT / Austrian Institute of Technology
+    Copyright (C) 2014  AIT / Austrian Institute of Technology
     http://www.ait.ac.at
 
     This program is free software: you can redistribute it and/or modify
@@ -17,32 +15,24 @@ package at.ac.ait.ubicity.core;
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html
  */
-
-import at.ac.ait.ubicity.core.constants.Constants;
-import at.ac.ait.ubicity.core.interfaces.UbicityPlugin;
+package at.ac.ait.ubicity.core;
 
 
-import java.io.File;
-import java.net.URI;
-import java.util.HashMap;
+import at.ac.ait.ubicity.commons.AbstractCore;
+import at.ac.ait.ubicity.commons.Constants;
+import at.ac.ait.ubicity.commons.PluginContext;
+import at.ac.ait.ubicity.commons.interfaces.ReverseControllableMediumPlugin;
+import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
+import at.ac.ait.ubicity.commons.protocol.Answer;
+import at.ac.ait.ubicity.commons.protocol.Command;
+import at.ac.ait.ubicity.commons.protocol.Medium;
+import at.ac.ait.ubicity.ubicity.flickrplugin.FotoGrabber;
+import at.ac.ait.ubicity.ubicity.flickrplugin.impl.FotoGrabberImpl;
+
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.xeoh.plugins.base.PluginManager;
-import net.xeoh.plugins.base.impl.PluginManagerFactory;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-
-
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.json.JSONObject;
 
 
@@ -62,98 +52,47 @@ import org.json.JSONObject;
  * elasticsearch for indexing. 
  *
  */
-public final class Core implements Runnable {
+public final class Core extends AbstractCore implements Runnable {
 
     
-    
-    //here we keep track of currently running plugins
-    final Map< UbicityPlugin, PluginContext > plugins;
-        
-    //used for implementing the singleton pattern
     private static Core singleton;
     
-    //our elasticsearch indexing client
-    private  static final TransportClient esclient;
-
     
-    //the Core's own configuration. Static, as Core implements the Singleton pattern
-    private static Configuration config;
-    
-    
-    //this object is doing actual plugin management for us ( at least the loading & instantiation part ) 
-    private final PluginManager pluginManager;
-    
-    //the place where the PluginManager is supposed to ( cyclically ) look for new plugins being dumped, in .jar form
-    private final URI pluginURI;
-    
-    private static Logger logger;
-    
-    static String server;
-    static String index;
-    static String type;
-    
-    
-    
-    static  {
-        //get our own Configuration
-        try {
-            //set necessary stuff for us to ueberhaupt be able to work
-            config = new PropertiesConfiguration( "core.cfg" );
-            server = config.getString( "ELASTICSEARCH_HOST" );
-            index = config.getString( "ELASTICSEARCH_INDEX" );
-            type = config.getString( "ELASTICSEARCH_TYPE" ); 
-            logger.info( "Core : will index to " + server + ":" + 9200 + "/" + index + " @type " + type );
-        }
-        catch( ConfigurationException noConfig )    {
-            //log this problem and then go along with default configuration
-            logger.warning( "Core :: could not configure from core.cfg file [ not found, or there was a problem with it ], trying to revert to DefaultConfiguration  : " + noConfig.toString() );
-            //here, we need not set any fields on our selves, DefaultConfiguration is clever enough to figure this out and do it for us
-            config = new DefaultConfiguration();
-        }
-        catch( NullPointerException noConfig )  {
-            config = new DefaultConfiguration();
-        }
+    public static Core getInstance()    {
         
-        //instantiate an elasticsearch client
-       Settings settings = ImmutableSettings.settingsBuilder().build();
-        esclient = new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress( server, 9300));
-        try  {
-            
-            CreateIndexRequestBuilder createIndexRequestBuilder = esclient.admin().indices().prepareCreate( index );
-            createIndexRequestBuilder.execute().actionGet();
-        }
-        catch( Throwable t )    {
-            //do nothing, we may get an IndexAlreadyExistsException, but don't care about that, here and now
-        }        
+        if( singleton == null ) singleton = new Core();
+        return singleton;
     }
-    
-    
     /**
      * 
      * Let nobody but ourselves instantiate a core. 
      * 
      */
     private Core()  {
-        plugins = new HashMap();
-        pluginManager = PluginManagerFactory.createPluginManager();
-        pluginURI = new File( Constants.PLUGIN_DIRECTORY_NAME ).toURI();
-        logger = Logger.getLogger( this.getClass().getName() );
-        logger.setLevel( Level.ALL );
+        super();
+        singleton = this;
         //register a shutdown hook
         Runtime.getRuntime().addShutdownHook( new Thread( new CoreShutdownHook( this ) ) ) ;
+        
+        //start the jit controller in order for the back end to react upon JIT indexing requests
+        System.out.println( "[CORE] starting JitIndexingController" );
+        JitIndexingController jitController = new JitIndexingController( Constants.REVERSE_COMMAND_AND_CONTROL_PORT );
+        Thread jitThread = new Thread( jitController );
+        jitThread.setPriority( Thread.MAX_PRIORITY - 1 );
+        jitThread.start();
+        System.out.println( "[CORE] successfully started JitIndexingController" );
+        
+        
+        System.out.println( "[CORE] attempting to start Flickr plugin for ubicity" );
+        FotoGrabber flickr = new FotoGrabberImpl();
+        System.out.println( "[CORE] successfully started " + flickr.getName()  );
     }
     
     
     
-    /**
-     * 
-     * @return Core - an actual Core instance
-     */
-    public final static Core getInstance()  {
-        if( singleton == null ) singleton = new Core();
-        return singleton;
-    }
+   
     
+   
     
     @Override
     /**
@@ -182,31 +121,7 @@ public final class Core implements Runnable {
     
     
     
-    /**
-     * 
-     * @param _plugin The plugin to register. A Plugin **MUST** call this method in order to be recognized by the Core
-     * and benefit from its access to elasticsearch. It **IS** possible to run as a plugin without calling this method; 
-     * the plugin is then, basically, an isolated POJO or - if it wishes to implement the Runnable interface - an isolated Thread with
-     * the same JVM as the Core.
-     * @return true if registering went OK, false in case of a problem.
-     */
-    public final boolean register( UbicityPlugin _plugin ) {
-        try {
-            PluginContext context = new PluginContext( esclient, _plugin );
-            _plugin.setContext( context );
-            plugins.put( _plugin, context );
-            return true;
-        }
-        catch( Exception e )    {
-            logger.warning( "caught an exception while trying to register plugin " + _plugin.getName() + " : " + e.toString() );
-            return false;
-        }
-        catch( Error ee )   {
-            logger.severe( "caught an error while trying to register plugin " + _plugin.getName() + ": " + ee.toString() );
-            return false;
-        }
-        
-    }
+
 
     
     
@@ -227,22 +142,7 @@ public final class Core implements Runnable {
     }
     
     
-    /**
-     * 
-     * @param obituary The obituary for a consumer, whose thread has just died. 
-     * We use it to get to the rest of our consumer's associated plugin information, 
-     * and properly terminate both the plugin and its producer thread. 
-     * If the plugin does not terminate properly within a standard waiting period, 
-     * we force it stop. 
-     */
-    void callBack( Obituary obituary ) {
-        UbicityPlugin p = obituary.getPlugin();
-        plugins.get( p ).destroy();
-        plugins.remove( p );
-        p = null;
-        obituary = null;
-    }
-    
+
     
     
     /**
@@ -255,16 +155,17 @@ public final class Core implements Runnable {
     }
     
     
-    
-    /**
-     * Offer more than 1 JSONObject simultaneously. 
-     * @param _json 
-     * @param _pC   
-     */
-    public final void offerBulk( JSONObject[] _json, PluginContext _pC )    {
-        _pC.getAssociatedProducer().offer( _json );
+      public Answer forward( Command _command )   {
+          System.out.println( "----------------> > > > [CORE] got a Command forwarded::" + _command.toRESTString() );
+        for( Medium m: _command.getMedia().get() )  {
+            for( UbicityPlugin p: plugins.keySet() )    {
+                System.out.println( "[CORE] checking on plugin " + p.getName() + " for command " + _command.toRESTString() );
+                if( p instanceof  ReverseControllableMediumPlugin ) return ( ( ReverseControllableMediumPlugin) p ).execute( _command );
+            }
+        }
+        return Answer.FAIL;
     }
-    
+ 
     
     
     
@@ -321,6 +222,13 @@ final class CoreShutdownHook implements Runnable {
         Logger.getAnonymousLogger().warning( this.getClass().getName() + " :  calling prepareShutdown() on Core " );
         core.prepareShutdown( this );
     }
+    
+    
+    
+    
+    
+    
+  
     
 }
 

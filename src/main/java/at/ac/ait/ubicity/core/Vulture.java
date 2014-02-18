@@ -1,7 +1,5 @@
-
-package at.ac.ait.ubicity.core;
 /**
-    Copyright (C) 2013  AIT / Austrian Institute of Technology
+    Copyright (C) 2014  AIT / Austrian Institute of Technology
     http://www.ait.ac.at
 
     This program is free software: you can redistribute it and/or modify
@@ -17,29 +15,20 @@ package at.ac.ait.ubicity.core;
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html
  */
-
-import at.ac.ait.ubicity.core.interfaces.UbicityPlugin;
+package at.ac.ait.ubicity.core;
 
 /**
  *
- * @author Jan van Oort
- * @version 0.1
- * 
- * The obituary ( or "death notice" ) of JSONConsumer, used as a callback carrier towards the Core. 
+ * @author jan van oort
  */
-final class Obituary {
-
-    
-    private final UbicityPlugin plugin;
+final class Vulture {
     
     
+    protected final JitIndexingController jitController;
     
-    public Obituary( UbicityPlugin _plugin ) {
-        plugin = _plugin;
+    
+    
+    public Vulture( final JitIndexingController _jitController )  {
+        jitController = _jitController;
     }
-
-    UbicityPlugin getPlugin() {
-        return plugin;
-    }
-    
 }
