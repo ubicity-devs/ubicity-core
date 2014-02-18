@@ -108,6 +108,16 @@
       <artifactId>commons-configuration</artifactId>
       <version>1.9</version>
     </dependency>
+    <dependency>
+      <groupId>at.ac.ait.ubicity</groupId>
+      <artifactId>commons</artifactId>
+      <version>0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>at.ac.ait.ubicity</groupId>
+      <artifactId>ubicity-flickrplugin</artifactId>
+      <version>0.1-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 </project>
 
