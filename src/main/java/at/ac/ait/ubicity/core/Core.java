@@ -156,7 +156,7 @@ public final class Core extends AbstractCore implements Runnable {
     
     
       public Answer forward( Command _command )   {
-          System.out.println( "----------------> > > > [CORE] got a Command forwarded::" + _command.toRESTString() );
+          System.out.println( "[CORE] got a Command forwarded::" + _command.toRESTString() );
         for( Medium m: _command.getMedia().get() )  {
             for( UbicityPlugin p: plugins.keySet() )    {
                 System.out.println( "[CORE] checking on plugin " + p.getName() + " for command " + _command.toRESTString() );

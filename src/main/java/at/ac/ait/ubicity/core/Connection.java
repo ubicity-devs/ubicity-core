@@ -47,7 +47,7 @@ class Connection extends Thread {
     Connection( final Socket _client, final ThreadGroup _threadGroup, final int _priority, final Vulture _vulture) {
         
         super( _threadGroup, "Connection " + connection_number++ );
-        System.out.println( "-------------> > > new Connection from " + _client.getInetAddress() );
+        System.out.println( "[CORE] new Connection from " + _client.getInetAddress() );
         this.setPriority( _priority );
         
         client = _client;
@@ -63,7 +63,7 @@ class Connection extends Thread {
     @Override
     public void run() {
 
-        System.out.println( "-----------> > > [CORE] starting up connection from "  + client.getInetAddress() );
+        System.out.println( "[CORE] starting up connection from "  + client.getInetAddress() );
         
         
         try {
@@ -82,7 +82,7 @@ class Connection extends Thread {
             try {
                 final Object o = in.readObject();
                 Command _command = ( Command ) o;
-                System.out.println("-------------> > > received a command:: " + _command.toRESTString() );
+                System.out.println("[CORE] received a command:: " + _command.toRESTString() );
                 Answer _a = Core.getInstance().forward( _command );
                 if( !( _a == null )  ) out.writeObject( _a );
             } 
