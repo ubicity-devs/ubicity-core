@@ -84,7 +84,7 @@ class Connection extends Thread {
                 Command _command = ( Command ) o;
                 System.out.println("-------------> > > received a command:: " + _command.toRESTString() );
                 Answer _a = Core.getInstance().forward( _command );
-                if( !( _a == null )  ) out.writeObject( Core.getInstance().forward( _command ) );
+                if( !( _a == null )  ) out.writeObject( _a );
             } 
             catch (IOException | ClassNotFoundException ex) {
                 JitIndexingController.fail( ex, "Exception occurred while trying to read Command object for " + this.getName() );
