@@ -52,7 +52,6 @@ public final class JitIndexingController implements Runnable {
     
     protected ThreadGroup threadGroup;
     
-    protected List< String > connectionList;
     
     protected Vector< Connection > connections;
     
@@ -75,8 +74,6 @@ public final class JitIndexingController implements Runnable {
         }
         threadGroup = new ThreadGroup( "ubicity JitIndexingController connections" );
         connections = new Vector();
-        connectionList = new ArrayList();
-        
         vulture = new Vulture( this );
 
     }
@@ -97,9 +94,7 @@ public final class JitIndexingController implements Runnable {
                 Connection c = new Connection( client, threadGroup, 3, vulture );
                 synchronized( connections ) {
                     connections.addElement( c );
-                    connectionList.add( c.toString() );
                 }
-                
             }
         }
         catch( IOException e )  {

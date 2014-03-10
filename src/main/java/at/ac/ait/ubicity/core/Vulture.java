@@ -21,7 +21,7 @@ package at.ac.ait.ubicity.core;
  *
  * @author jan van oort
  */
-final class Vulture {
+final class Vulture extends Thread {
     
     
     protected final JitIndexingController jitController;
@@ -29,6 +29,31 @@ final class Vulture {
     
     
     public Vulture( final JitIndexingController _jitController )  {
+        super( _jitController.threadGroup, "Connection Vulture" );
         jitController = _jitController;
+        this.start();
+    }
+    
+    
+    
+    public synchronized void run()  {
+        for( ;; )   {
+            try {
+                this.wait( 1000 );
+            }
+            catch( InterruptedException _interrupt )    {
+                Thread.interrupted();
+            }
+            synchronized( jitController.connections  )  {
+                for( int i = 0; i < jitController.connections.size(); i++ ) {
+                   Connection _c = jitController.connections.elementAt( i );
+                   if( ! ( _c.isAlive() ) ) {
+                       jitController.connections.removeElementAt( i );
+
+                       i--;
+                   }
+                }
+            }
+        }
     }
 }

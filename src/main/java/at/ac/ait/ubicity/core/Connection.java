@@ -37,7 +37,7 @@ class Connection extends Thread {
     
     protected Socket client;
     
-    protected Vulture vulture;
+    protected final Vulture vulture;
     
     protected ObjectInputStream in;
     
@@ -90,6 +90,11 @@ class Connection extends Thread {
                 JitIndexingController.fail( ex, "Exception occurred while trying to read Command object for " + this.getName() );
                 return;
             } 
+            finally {
+                synchronized( vulture ) {
+                    vulture.notify();
+                }
+            }
         }
     }
     
