@@ -26,12 +26,6 @@ import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
 import at.ac.ait.ubicity.commons.protocol.Answer;
 import at.ac.ait.ubicity.commons.protocol.Command;
 import at.ac.ait.ubicity.commons.protocol.Medium;
-import at.ac.ait.ubicity.twitterplugin.Streamer;
-import at.ac.ait.ubicity.twitterplugin.impl.StreamerImpl;
-import at.ac.ait.ubicity.ubicity.feedzillaplugin.NewsGrabber;
-import at.ac.ait.ubicity.ubicity.feedzillaplugin.impl.NewsGrabberImpl;
-import at.ac.ait.ubicity.ubicity.flickrplugin.FotoGrabber;
-import at.ac.ait.ubicity.ubicity.flickrplugin.impl.FotoGrabberImpl;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -87,17 +81,7 @@ public final class Core extends AbstractCore implements Runnable {
         System.out.println( "[CORE] successfully started JitIndexingController" );
         
         
-//        System.out.println( "[CORE] attempting to start Flickr plugin for ubicity" );
-//        FotoGrabber flickr = new FotoGrabberImpl();
-//        System.out.println( "[CORE] successfully started " + flickr.getName()  );
-        
-        System.out.println( "[CORE] attempting to start Twitter streamer plugin for ubicity" );
-        Streamer twitter = new StreamerImpl();
-        System.out.println( "[CORE] successfully started " + twitter.getName() );
-        
-//        System.out.println( "[CORE] attempting to start Feedzilla plugin for ubicity" );
-//        NewsGrabber feedzilla = new NewsGrabberImpl();
-//        System.out.println( "[CORE] successfully started Feedzilla plugin for ubicity" );
+
     }
     
     

@@ -111,13 +111,13 @@
     <dependency>
       <groupId>at.ac.ait.ubicity</groupId>
       <artifactId>commons</artifactId>
-      <version>0.1-SNAPSHOT</version>
+      <version>0.2.1-SNAPSHOT</version>
     </dependency>
-    <dependency>
+    <!--dependency>
       <groupId>at.ac.ait.ubicity</groupId>
       <artifactId>ubicity-flickrplugin</artifactId>
       <version>0.1-SNAPSHOT</version>
-    </dependency>
+    </dependency-->
   </dependencies>
 </project>
 
