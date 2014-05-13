@@ -1,123 +1,90 @@
-<!--
-    Copyright (C) 2013  AIT / Austrian Institute of Technology
-    http://www.ait.ac.at
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html
- -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-  <groupId>at.ac.ait</groupId>
-  <artifactId>ubicity-core</artifactId>
-  <version>0.2.1-SNAPSHOT</version>
-  <description>This is the core ( Core ) project for ubicity, server-side ( backend-side )</description>
-  <packaging>jar</packaging>
+	<parent>
+		<groupId>at.ac.ait.ubicity</groupId>
+		<artifactId>ubicity-root</artifactId>
+		<version>0.2.1-SNAPSHOT</version>
+		<relativePath>../ubicity-root/pom.xml</relativePath>
+	</parent>
 
-  <name>ubicity-core</name>
-  
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
-                <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
-                </configuration>
-            </plugin>
-            <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.2.1</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>java</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <mainClass>at.ac.ait.ubicity.core.Core</mainClass>
-          <commandlineArgs></commandlineArgs>
-          <systemProperties>
-            <systemProperty>
-              <key>-Xms</key>
-              <value>1500m</value>
-            </systemProperty>
-            <systemProperty>
-                <key>-Xmx</key>
-                <value>1500m</value>
-            </systemProperty>
-          </systemProperties>
-        </configuration>
-      </plugin>
+	<artifactId>ubicity-core</artifactId>
+	<description>This is the core ( Core ) project for ubicity, server-side ( backend-side )</description>
+	<packaging>jar</packaging>
 
-        </plugins>
-    </build>
-    <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+	<name>ubicity-core</name>
 
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>ubicity-json</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch</artifactId>
-      <version>0.90.3</version>
-    </dependency>
-    <dependency>
-      <groupId>org.twitter4j</groupId>
-      <artifactId>twitter4j-core</artifactId>
-      <version>3.0.3</version>
-    </dependency>
-    <dependency>
-      <groupId>org.twitter4j</groupId>
-      <artifactId>twitter4j-stream</artifactId>
-      <version>3.0.3</version>
-    </dependency>
-    <dependency>
-      <groupId>at.ac.ait.ubicity</groupId>
-      <artifactId>ubicity-jspf</artifactId>
-      <version>0.2.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-configuration</groupId>
-      <artifactId>commons-configuration</artifactId>
-      <version>1.9</version>
-    </dependency>
-    <dependency>
-      <groupId>at.ac.ait.ubicity</groupId>
-      <artifactId>commons</artifactId>
-      <version>0.2.1-SNAPSHOT</version>
-    </dependency>
-    <!--dependency>
-      <groupId>at.ac.ait.ubicity</groupId>
-      <artifactId>ubicity-flickrplugin</artifactId>
-      <version>0.1-SNAPSHOT</version>
-    </dependency-->
-  </dependencies>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.2.1</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>java</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<mainClass>at.ac.ait.ubicity.core.Core</mainClass>
+					<commandlineArgs></commandlineArgs>
+					<systemProperties>
+						<systemProperty>
+							<key>-Xms</key>
+							<value>1500m</value>
+						</systemProperty>
+						<systemProperty>
+							<key>-Xmx</key>
+							<value>1500m</value>
+						</systemProperty>
+					</systemProperties>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>at.ac.ait.ubicity</groupId>
+			<artifactId>ubicity-commons</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.elasticsearch</groupId>
+			<artifactId>elasticsearch</artifactId>
+			<version>0.90.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.twitter4j</groupId>
+			<artifactId>twitter4j-core</artifactId>
+			<version>3.0.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.twitter4j</groupId>
+			<artifactId>twitter4j-stream</artifactId>
+			<version>3.0.3</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-configuration</groupId>
+			<artifactId>commons-configuration</artifactId>
+			<version>1.9</version>
+		</dependency>
+	</dependencies>
 </project>
 
