@@ -41,7 +41,7 @@ public final class JitIndexingController implements Runnable {
     final static Logger logger = Logger.getLogger( JitIndexingController.class.getName() );
     
     static  {
-        logger.setLevel( Level.ALL );
+        
     }
     
     
