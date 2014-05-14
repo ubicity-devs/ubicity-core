@@ -50,6 +50,8 @@ import at.ac.ait.ubicity.commons.protocol.Medium;
  */
 public final class Core extends AbstractCore implements Runnable {
 
+	private static final Logger logger = Logger.getLogger(Core.class.getName());
+
 	private static Core singleton;
 
 	public static Core getInstance() {
@@ -73,13 +75,13 @@ public final class Core extends AbstractCore implements Runnable {
 
 		// start the jit controller in order for the back end to react upon JIT
 		// indexing requests
-		System.out.println("[CORE] starting JitIndexingController");
+		logger.info("starting JitIndexingController");
 		JitIndexingController jitController = new JitIndexingController(
 				Constants.REVERSE_COMMAND_AND_CONTROL_PORT);
 		Thread jitThread = new Thread(jitController);
 		jitThread.setPriority(Thread.MAX_PRIORITY - 1);
 		jitThread.start();
-		System.out.println("[CORE] successfully started JitIndexingController");
+		logger.info("successfully started JitIndexingController");
 
 	}
 
@@ -139,11 +141,10 @@ public final class Core extends AbstractCore implements Runnable {
 
 	@Override
 	public Answer forward(Command _command) {
-		System.out.println("[CORE] got a Command forwarded::"
-				+ _command.toRESTString());
+		logger.info("got a Command forwarded::" + _command.toRESTString());
 		for (Medium m : _command.getMedia().get()) {
 			for (UbicityPlugin p : plugins.keySet()) {
-				System.out.println("[CORE] checking on plugin " + p.getName()
+				logger.info("checking on plugin " + p.getName()
 						+ " for command " + _command.toRESTString());
 				if (p instanceof ReverseControllableMediumPlugin)
 					return ((ReverseControllableMediumPlugin) p)
@@ -199,15 +200,17 @@ final class CoreShutdownHook implements Runnable {
 	// certain apocalyptic cirumstances...
 	private final Core core;
 
+	private static final Logger logger = Logger
+			.getLogger(CoreShutdownHook.class.getName());
+
 	public CoreShutdownHook(Core _core) {
 		core = _core;
 	}
 
 	@Override
 	public void run() {
-		Logger.getAnonymousLogger().warning(
-				this.getClass().getName()
-						+ " :  calling prepareShutdown() on Core ");
+		logger.warning(this.getClass().getName()
+				+ " :  calling prepareShutdown() on Core ");
 		core.prepareShutdown(this);
 	}
 

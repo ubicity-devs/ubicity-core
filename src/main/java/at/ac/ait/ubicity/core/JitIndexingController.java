@@ -17,15 +17,13 @@
  */
 package at.ac.ait.ubicity.core;
 
-import at.ac.ait.ubicity.commons.Constants;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Vector;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import at.ac.ait.ubicity.commons.Constants;
 
 /**
  *
@@ -33,87 +31,68 @@ import java.util.logging.Logger;
  */
 public final class JitIndexingController implements Runnable {
 
-    
-    
-    
-    public final static int PORT = Constants.REVERSE_COMMAND_AND_CONTROL_PORT;
-    
-    final static Logger logger = Logger.getLogger( JitIndexingController.class.getName() );
-    
-    static  {
-        
-    }
-    
-    
-    
-    protected int port;
-    
-    protected ServerSocket listenSocket;
-    
-    protected ThreadGroup threadGroup;
-    
-    
-    protected Vector< Connection > connections;
-    
-    protected Vulture vulture;
-    
-    
-    
-    public final static void fail( Throwable e, String msg )    {
-        logger.severe( msg + ":" + e );
-    }
-    
-    
-    public JitIndexingController( int _port )   {
-        if( _port == 0 ) _port = PORT;
-        try {
-           listenSocket = new ServerSocket( _port );
-        }
-        catch( Exception | Error e )    {
-            fail( e, "Could not create server-side socket on ubicity core" );
-        }
-        threadGroup = new ThreadGroup( "ubicity JitIndexingController connections" );
-        connections = new Vector();
-        vulture = new Vulture( this );
+	public final static int PORT = Constants.REVERSE_COMMAND_AND_CONTROL_PORT;
 
-    }
-    
-    
-    
-    /**
-     * Loop forever, listening for and acceptino connections from clients. For each connection,
-     * create a Connection object to handle communication through the new Socket.
-     * When we create a new connection, add it to the Vector of connections. The Vulture will
-     * dispose of dead connections.
-     */    
-    @Override
-    public void run() {
-        try {
-            while( true )   {
-                Socket client = listenSocket.accept();
-                Connection c = new Connection( client, threadGroup, 3, vulture );
-                synchronized( connections ) {
-                    connections.addElement( c );
-                }
-            }
-        }
-        catch( IOException e )  {
-            fail( e, "Exception while listening for connections" );
-        }
-    }
-    
-    
-    
-    
-    
-    public final static void main( String... args )    {
-        int port = 0;
-        if( args.length == 1 )  {
-            port = Integer.parseInt( args[ 0 ] );
-        }
-        JitIndexingController controller = new JitIndexingController( port );
-        Thread t = new Thread( controller );
-        t.start();
-    }
+	private static final Logger logger = Logger
+			.getLogger(JitIndexingController.class.getName());
+
+	protected int port;
+
+	protected ServerSocket listenSocket;
+
+	protected ThreadGroup threadGroup;
+
+	protected Vector<Connection> connections;
+
+	protected Vulture vulture;
+
+	public final static void fail(Throwable e, String msg) {
+		logger.severe(msg + ":" + e);
+	}
+
+	public JitIndexingController(int _port) {
+		if (_port == 0)
+			_port = PORT;
+		try {
+			listenSocket = new ServerSocket(_port);
+		} catch (Exception | Error e) {
+			fail(e, "Could not create server-side socket on ubicity core");
+		}
+		threadGroup = new ThreadGroup(
+				"ubicity JitIndexingController connections");
+		connections = new Vector();
+		vulture = new Vulture(this);
+
+	}
+
+	/**
+	 * Loop forever, listening for and acceptino connections from clients. For
+	 * each connection, create a Connection object to handle communication
+	 * through the new Socket. When we create a new connection, add it to the
+	 * Vector of connections. The Vulture will dispose of dead connections.
+	 */
+	@Override
+	public void run() {
+		try {
+			while (true) {
+				Socket client = listenSocket.accept();
+				Connection c = new Connection(client, threadGroup, 3, vulture);
+				synchronized (connections) {
+					connections.addElement(c);
+				}
+			}
+		} catch (IOException e) {
+			fail(e, "Exception while listening for connections");
+		}
+	}
+
+	public final static void main(String... args) {
+		int port = 0;
+		if (args.length == 1) {
+			port = Integer.parseInt(args[0]);
+		}
+		JitIndexingController controller = new JitIndexingController(port);
+		Thread t = new Thread(controller);
+		t.start();
+	}
 }
-    

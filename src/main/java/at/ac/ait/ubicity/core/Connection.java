@@ -23,6 +23,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+import org.apache.log4j.Logger;
+
 import at.ac.ait.ubicity.commons.protocol.Answer;
 import at.ac.ait.ubicity.commons.protocol.Command;
 
@@ -42,12 +44,14 @@ class Connection extends Thread {
 
 	protected ObjectOutputStream out;
 
+	private static final Logger logger = Logger.getLogger(Connection.class
+			.getName());
+
 	Connection(final Socket _client, final ThreadGroup _threadGroup,
 			final int _priority, final Vulture _vulture) {
 
 		super(_threadGroup, "Connection " + connection_number++);
-		System.out.println("[CORE] new Connection from "
-				+ _client.getInetAddress());
+		logger.info("new Connection from " + _client.getInetAddress());
 		this.setPriority(_priority);
 
 		client = _client;
@@ -58,8 +62,7 @@ class Connection extends Thread {
 	@Override
 	public void run() {
 
-		System.out.println("[CORE] starting up connection from "
-				+ client.getInetAddress());
+		logger.info("starting up connection from " + client.getInetAddress());
 
 		try {
 			in = new ObjectInputStream(client.getInputStream());
@@ -80,8 +83,7 @@ class Connection extends Thread {
 			try {
 				final Object o = in.readObject();
 				Command _command = (Command) o;
-				System.out.println("[CORE] received a command:: "
-						+ _command.toRESTString());
+				logger.info("received a command:: " + _command.toRESTString());
 				Answer _a = Core.getInstance().forward(_command);
 				if (!(_a == null))
 					out.writeObject(_a);
@@ -97,5 +99,4 @@ class Connection extends Thread {
 			}
 		}
 	}
-
 }

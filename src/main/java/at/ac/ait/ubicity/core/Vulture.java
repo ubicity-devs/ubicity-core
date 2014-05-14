@@ -22,38 +22,33 @@ package at.ac.ait.ubicity.core;
  * @author jan van oort
  */
 final class Vulture extends Thread {
-    
-    
-    protected final JitIndexingController jitController;
-    
-    
-    
-    public Vulture( final JitIndexingController _jitController )  {
-        super( _jitController.threadGroup, "Connection Vulture" );
-        jitController = _jitController;
-        this.start();
-    }
-    
-    
-    
-    public synchronized void run()  {
-        for( ;; )   {
-            try {
-                this.wait( 1000 );
-            }
-            catch( InterruptedException _interrupt )    {
-                Thread.interrupted();
-            }
-            synchronized( jitController.connections  )  {
-                for( int i = 0; i < jitController.connections.size(); i++ ) {
-                   Connection _c = jitController.connections.elementAt( i );
-                   if( ! ( _c.isAlive() ) ) {
-                       jitController.connections.removeElementAt( i );
 
-                       i--;
-                   }
-                }
-            }
-        }
-    }
+	protected final JitIndexingController jitController;
+
+	public Vulture(final JitIndexingController _jitController) {
+		super(_jitController.threadGroup, "Connection Vulture");
+		jitController = _jitController;
+		this.start();
+	}
+
+	@Override
+	public synchronized void run() {
+		while (true) {
+			try {
+				this.wait(1000);
+			} catch (InterruptedException _interrupt) {
+				Thread.interrupted();
+			}
+			synchronized (jitController.connections) {
+				for (int i = 0; i < jitController.connections.size(); i++) {
+					Connection _c = jitController.connections.elementAt(i);
+					if (!(_c.isAlive())) {
+						jitController.connections.removeElementAt(i);
+
+						i--;
+					}
+				}
+			}
+		}
+	}
 }
