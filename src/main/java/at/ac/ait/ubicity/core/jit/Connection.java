@@ -16,7 +16,7 @@
     along with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html
  */
 
-package at.ac.ait.ubicity.core;
+package at.ac.ait.ubicity.core.jit;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 
 import at.ac.ait.ubicity.commons.protocol.Answer;
 import at.ac.ait.ubicity.commons.protocol.Command;
+import at.ac.ait.ubicity.core.Core;
 
 /**
  *

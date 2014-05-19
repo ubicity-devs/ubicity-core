@@ -15,7 +15,7 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html
  */
-package at.ac.ait.ubicity.core;
+package at.ac.ait.ubicity.core.jit;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -23,7 +23,9 @@ import java.net.Socket;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import at.ac.ait.ubicity.commons.Constants;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 /**
  *
@@ -31,12 +33,20 @@ import at.ac.ait.ubicity.commons.Constants;
  */
 public final class JitIndexingController implements Runnable {
 
-	public final static int PORT = Constants.REVERSE_COMMAND_AND_CONTROL_PORT;
-
 	private static final Logger logger = Logger
 			.getLogger(JitIndexingController.class.getName());
 
-	protected int port;
+	private static int PORT;
+	static {
+		try {
+			// set necessary stuff for us to ueberhaupt be able to work
+			Configuration config = new PropertiesConfiguration("commons.cfg");
+			PORT = config.getInt("commons.plugins.reverse_cac_port");
+
+		} catch (ConfigurationException noConfig) {
+			logger.severe("could not configure from commons.cfg file");
+		}
+	}
 
 	protected ServerSocket listenSocket;
 
@@ -51,6 +61,7 @@ public final class JitIndexingController implements Runnable {
 	}
 
 	public JitIndexingController(int _port) {
+
 		if (_port == 0)
 			_port = PORT;
 		try {
@@ -60,9 +71,13 @@ public final class JitIndexingController implements Runnable {
 		}
 		threadGroup = new ThreadGroup(
 				"ubicity JitIndexingController connections");
-		connections = new Vector();
+		connections = new Vector<Connection>();
 		vulture = new Vulture(this);
 
+	}
+
+	public JitIndexingController() {
+		this(PORT);
 	}
 
 	/**
@@ -87,12 +102,16 @@ public final class JitIndexingController implements Runnable {
 	}
 
 	public final static void main(String... args) {
-		int port = 0;
+
+		Thread t;
+
 		if (args.length == 1) {
-			port = Integer.parseInt(args[0]);
+			int port = Integer.parseInt(args[0]);
+			t = new Thread(new JitIndexingController(port));
+		} else {
+			t = new Thread(new JitIndexingController());
 		}
-		JitIndexingController controller = new JitIndexingController(port);
-		Thread t = new Thread(controller);
+
 		t.start();
 	}
 }

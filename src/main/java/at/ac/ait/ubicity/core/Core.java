@@ -24,13 +24,13 @@ import java.util.logging.Logger;
 import org.json.JSONObject;
 
 import at.ac.ait.ubicity.commons.AbstractCore;
-import at.ac.ait.ubicity.commons.Constants;
-import at.ac.ait.ubicity.commons.PluginContext;
 import at.ac.ait.ubicity.commons.interfaces.ReverseControllableMediumPlugin;
 import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
+import at.ac.ait.ubicity.commons.plugin.PluginContext;
 import at.ac.ait.ubicity.commons.protocol.Answer;
 import at.ac.ait.ubicity.commons.protocol.Command;
 import at.ac.ait.ubicity.commons.protocol.Medium;
+import at.ac.ait.ubicity.core.jit.JitIndexingController;
 
 /**
  *
@@ -67,7 +67,6 @@ public final class Core extends AbstractCore implements Runnable {
 	 * 
 	 */
 	private Core() {
-		super();
 		singleton = this;
 		// register a shutdown hook
 		Runtime.getRuntime().addShutdownHook(
@@ -76,8 +75,7 @@ public final class Core extends AbstractCore implements Runnable {
 		// start the jit controller in order for the back end to react upon JIT
 		// indexing requests
 		logger.info("starting JitIndexingController");
-		JitIndexingController jitController = new JitIndexingController(
-				Constants.REVERSE_COMMAND_AND_CONTROL_PORT);
+		JitIndexingController jitController = new JitIndexingController();
 		Thread jitThread = new Thread(jitController);
 		jitThread.setPriority(Thread.MAX_PRIORITY - 1);
 		jitThread.start();
@@ -177,7 +175,9 @@ public final class Core extends AbstractCore implements Runnable {
 	final void prepareShutdown(final CoreShutdownHook _caller) {
 		if (_caller != null) {
 			try {
-				Core.esclient.close();
+
+				client.close();
+
 				Set<UbicityPlugin> _plugins = plugins.keySet();
 				Iterator<UbicityPlugin> onPlugins = _plugins.iterator();
 				while (onPlugins.hasNext()) {
