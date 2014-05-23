@@ -21,11 +21,11 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.log4j.Logger;
 
 /**
  *
@@ -34,7 +34,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 public final class JitIndexingController implements Runnable {
 
 	private static final Logger logger = Logger
-			.getLogger(JitIndexingController.class.getName());
+			.getLogger(JitIndexingController.class);
 
 	private static int PORT;
 	static {
@@ -44,7 +44,7 @@ public final class JitIndexingController implements Runnable {
 			PORT = config.getInt("commons.plugins.reverse_cac_port");
 
 		} catch (ConfigurationException noConfig) {
-			logger.severe("could not configure from commons.cfg file");
+			logger.fatal("Configuration not found! " + noConfig.toString());
 		}
 	}
 
@@ -56,10 +56,6 @@ public final class JitIndexingController implements Runnable {
 
 	protected Vulture vulture;
 
-	public final static void fail(Throwable e, String msg) {
-		logger.severe(msg + ":" + e);
-	}
-
 	public JitIndexingController(int _port) {
 
 		if (_port == 0)
@@ -67,7 +63,8 @@ public final class JitIndexingController implements Runnable {
 		try {
 			listenSocket = new ServerSocket(_port);
 		} catch (Exception | Error e) {
-			fail(e, "Could not create server-side socket on ubicity core");
+			logger.fatal("Could not create server-side socket on ubicity core:"
+					+ e);
 		}
 		threadGroup = new ThreadGroup(
 				"ubicity JitIndexingController connections");
@@ -81,7 +78,7 @@ public final class JitIndexingController implements Runnable {
 	}
 
 	/**
-	 * Loop forever, listening for and acceptino connections from clients. For
+	 * Loop forever, listening for and accepting connections from clients. For
 	 * each connection, create a Connection object to handle communication
 	 * through the new Socket. When we create a new connection, add it to the
 	 * Vector of connections. The Vulture will dispose of dead connections.
@@ -97,7 +94,7 @@ public final class JitIndexingController implements Runnable {
 				}
 			}
 		} catch (IOException e) {
-			fail(e, "Exception while listening for connections");
+			logger.fatal("Exception while listening for connections" + e);
 		}
 	}
 

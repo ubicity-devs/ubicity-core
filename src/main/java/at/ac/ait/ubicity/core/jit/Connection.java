@@ -45,8 +45,7 @@ class Connection extends Thread {
 
 	protected ObjectOutputStream out;
 
-	private static final Logger logger = Logger.getLogger(Connection.class
-			.getName());
+	private static final Logger logger = Logger.getLogger(Connection.class);
 
 	Connection(final Socket _client, final ThreadGroup _threadGroup,
 			final int _priority, final Vulture _vulture) {
@@ -63,7 +62,7 @@ class Connection extends Thread {
 	@Override
 	public void run() {
 
-		logger.info("starting up connection from " + client.getInetAddress());
+		logger.info("Starting up connection from " + client.getInetAddress());
 
 		try {
 			in = new ObjectInputStream(client.getInputStream());
@@ -71,10 +70,8 @@ class Connection extends Thread {
 		} catch (IOException e) {
 			try {
 				client.close();
-				JitIndexingController.fail(
-						e,
-						"Exception while getting Socket Streams for "
-								+ this.getName());
+				logger.fatal("Exception while getting Socket Streams for "
+						+ this.getName(), e);
 			} catch (IOException ioex2) {
 				;
 			}
@@ -84,14 +81,14 @@ class Connection extends Thread {
 			try {
 				final Object o = in.readObject();
 				Command _command = (Command) o;
-				logger.info("received a command:: " + _command.toRESTString());
+				logger.info("Received a command:: " + _command.toRESTString());
 				Answer _a = Core.getInstance().forward(_command);
 				if (!(_a == null))
 					out.writeObject(_a);
 			} catch (IOException | ClassNotFoundException ex) {
-				JitIndexingController.fail(ex,
+				logger.fatal(
 						"Exception occurred while trying to read Command object for "
-								+ this.getName());
+								+ this.getName(), ex);
 				return;
 			} finally {
 				synchronized (vulture) {

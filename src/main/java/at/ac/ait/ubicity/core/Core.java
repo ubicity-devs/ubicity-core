@@ -17,16 +17,25 @@
  */
 package at.ac.ait.ubicity.core;
 
-import java.util.Iterator;
-import java.util.Set;
-import java.util.logging.Logger;
+import java.io.File;
+import java.net.URI;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
-import org.json.JSONObject;
+import net.xeoh.plugins.base.PluginManager;
+import net.xeoh.plugins.base.impl.PluginManagerFactory;
 
-import at.ac.ait.ubicity.commons.AbstractCore;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.log4j.Logger;
+
+import at.ac.ait.ubicity.commons.broker.BrokerConsumer;
+import at.ac.ait.ubicity.commons.broker.events.EventEntry;
+import at.ac.ait.ubicity.commons.interfaces.BaseUbicityPlugin;
 import at.ac.ait.ubicity.commons.interfaces.ReverseControllableMediumPlugin;
+import at.ac.ait.ubicity.commons.interfaces.UbicityAddOn;
 import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
-import at.ac.ait.ubicity.commons.plugin.PluginContext;
 import at.ac.ait.ubicity.commons.protocol.Answer;
 import at.ac.ait.ubicity.commons.protocol.Command;
 import at.ac.ait.ubicity.commons.protocol.Medium;
@@ -48,25 +57,31 @@ import at.ac.ait.ubicity.core.jit.JitIndexingController;
  *          JSONObject and offers it to elasticsearch for indexing.
  *
  */
-public final class Core extends AbstractCore implements Runnable {
+public final class Core implements Runnable {
 
-	private static final Logger logger = Logger.getLogger(Core.class.getName());
+	private static final Logger logger = Logger.getLogger(Core.class);
+
+	protected final ConcurrentHashMap<Integer, BaseUbicityPlugin> plugins = new ConcurrentHashMap<Integer, BaseUbicityPlugin>();
 
 	private static Core singleton;
 
-	public static Core getInstance() {
+	protected final PluginManager pluginManager = PluginManagerFactory
+			.createPluginManager();
 
-		if (singleton == null)
-			singleton = new Core();
-		return singleton;
-	}
+	protected URI pluginURI;
 
-	/**
-	 * 
-	 * Let nobody but ourselves instantiate a core.
-	 * 
-	 */
 	private Core() {
+
+		try {
+			// set necessary stuff for us to ueberhaupt be able to work
+			Configuration config = new PropertiesConfiguration("commons.cfg");
+			pluginURI = new File(config.getString("commons.plugins.directory"))
+					.toURI();
+
+		} catch (ConfigurationException noConfig) {
+			logger.fatal("Configuration not found! " + noConfig.toString());
+		}
+
 		singleton = this;
 		// register a shutdown hook
 		Runtime.getRuntime().addShutdownHook(
@@ -81,6 +96,13 @@ public final class Core extends AbstractCore implements Runnable {
 		jitThread.start();
 		logger.info("successfully started JitIndexingController");
 
+	}
+
+	public static Core getInstance() {
+
+		if (singleton == null)
+			singleton = new Core();
+		return singleton;
 	}
 
 	@Override
@@ -98,10 +120,9 @@ public final class Core extends AbstractCore implements Runnable {
 			} catch (InterruptedException _interrupt) {
 				Thread.interrupted();
 			} catch (Error ee) {
-				logger.severe("Core: caught an Error while running : "
-						+ ee.toString());
+				logger.fatal("caught an Error while running : " + ee.toString());
 			} catch (RuntimeException prettyBad) {
-				logger.severe("Core: caught a runtime exception while running :: "
+				logger.fatal("caught a runtime exception while running :: "
 						+ prettyBad.toString());
 			}
 		}
@@ -109,41 +130,72 @@ public final class Core extends AbstractCore implements Runnable {
 
 	/**
 	 * 
-	 * @param _plugin
-	 *            The plugin to deregister
-	 * @return boolean - in principle, always return true;
-	 * 
+	 * @param plugin
+	 *            The plugin to register. A Plugin **MUST** call this method in
+	 *            order to be recognized by the Core and benefit from its access
+	 *            to elasticsearch. It **IS** possible to run as a plugin
+	 *            without calling this method; the plugin is then, basically, an
+	 *            isolated POJO or - if it wishes to implement the Runnable
+	 *            interface - an isolated Thread with the same JVM as the Core.
+	 * @return true if registering went OK, false in case of a problem.
 	 */
-	public final boolean deRegister(UbicityPlugin _plugin) {
+	public synchronized final boolean register(BaseUbicityPlugin plugin) {
 		try {
-			return plugins.get(_plugin).prepareDestroy();
+
+			plugins.put(plugin.hashCode(), plugin);
+
+			if (UbicityAddOn.class.isInstance(plugin)) {
+				UbicityBroker.register(((BrokerConsumer) plugin));
+			}
+
+			logger.info(plugin.getName() + " registered");
+
+			return true;
+		} catch (Exception e) {
+			logger.warn("caught an exception while trying to register plugin "
+					+ plugin.getName() + " : " + e.toString());
+			return false;
 		} catch (Error ee) {
-			logger.severe("Core: caught an Error while trying to deregister "
-					+ _plugin.getName() + " :: " + ee.toString());
+			logger.warn("caught an error while trying to register plugin "
+					+ plugin.getName() + ": " + ee.toString());
 			return false;
 		}
 	}
 
 	/**
-	 * Offer a JSONObject to the Core.
 	 * 
-	 * @param _json
-	 *            A JSONObject, offered by a plugin for processing by
-	 *            elasticsearch
-	 * @param _pC
-	 *            The plugin offering the object
+	 * @param plugin
+	 *            The plugin to deregister
+	 * @return boolean - in principle, always return true;
+	 * 
 	 */
-	public final void offer(JSONObject _json, PluginContext _pC) {
-		_pC.getAssociatedProducer().offer(_json);
+	public final void deRegister(BaseUbicityPlugin plugin) {
+		try {
+			if (plugins.containsKey(plugin.hashCode())) {
+				logger.info(plugin.getName() + " deregistered");
+
+				plugins.remove(plugin.hashCode());
+
+				if (UbicityAddOn.class.isInstance(plugin)) {
+					UbicityBroker.deRegister((BrokerConsumer) plugin);
+				}
+
+				plugin.shutdown();
+			}
+		} catch (Error ee) {
+			logger.fatal(
+					"caught an Error while trying to deregister "
+							+ plugin.getName(), ee);
+		}
 	}
 
-	@Override
 	public Answer forward(Command _command) {
 		logger.info("got a Command forwarded::" + _command.toRESTString());
-		for (Medium m : _command.getMedia().get()) {
-			for (UbicityPlugin p : plugins.keySet()) {
-				logger.info("checking on plugin " + p.getName()
-						+ " for command " + _command.toRESTString());
+		List<Medium> list = _command.getMedia().get();
+
+		for (int i = 0; i < list.size(); i++) {
+			Medium m = list.get(i);
+			for (BaseUbicityPlugin p : plugins.values()) {
 				if (p instanceof ReverseControllableMediumPlugin)
 					return ((ReverseControllableMediumPlugin) p)
 							.execute(_command);
@@ -172,23 +224,41 @@ public final class Core extends AbstractCore implements Runnable {
 	 * @param _caller
 	 *            the CoreShutdownHook calling us.
 	 */
-	final void prepareShutdown(final CoreShutdownHook _caller) {
+	final synchronized void prepareShutdown(final CoreShutdownHook _caller) {
 		if (_caller != null) {
 			try {
 
-				client.close();
-
-				Set<UbicityPlugin> _plugins = plugins.keySet();
-				Iterator<UbicityPlugin> onPlugins = _plugins.iterator();
-				while (onPlugins.hasNext()) {
-					UbicityPlugin p = onPlugins.next();
-					deRegister(p);
+				// first deregister all plugins
+				for (BaseUbicityPlugin p : plugins.values()) {
+					if (UbicityPlugin.class.isInstance(p)) {
+						deRegister(p);
+						wait(500);
+					}
 				}
+
+				// Deregister all addOns
+				for (BaseUbicityPlugin p : plugins.values()) {
+					if (UbicityAddOn.class.isInstance(p)) {
+						deRegister(p);
+						wait(500);
+					}
+				}
+
 			} catch (Exception | Error e) {
-				logger.severe("Core : caught some problem while preparing shutdown :: "
-						+ e.toString());
+				logger.fatal(
+						"caught some problem while preparing shutdown :: ", e);
 			}
 		}
+	}
+
+	/**
+	 * Send EventEntry to configured consumers
+	 * 
+	 * @param event
+	 * @throws UbicityBrokerException
+	 */
+	public void publish(EventEntry event) throws UbicityBrokerException {
+		UbicityBroker.publish(event);
 	}
 }
 
@@ -209,9 +279,8 @@ final class CoreShutdownHook implements Runnable {
 
 	@Override
 	public void run() {
-		logger.warning(this.getClass().getName()
+		logger.warn(this.getClass().getName()
 				+ " :  calling prepareShutdown() on Core ");
 		core.prepareShutdown(this);
 	}
-
 }
