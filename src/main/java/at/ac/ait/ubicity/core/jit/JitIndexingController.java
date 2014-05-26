@@ -22,10 +22,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
+
+import at.ac.ait.ubicity.commons.util.PropertyLoader;
 
 /**
  *
@@ -38,14 +37,10 @@ public final class JitIndexingController implements Runnable {
 
 	private static int PORT;
 	static {
-		try {
-			// set necessary stuff for us to ueberhaupt be able to work
-			Configuration config = new PropertiesConfiguration("commons.cfg");
-			PORT = config.getInt("commons.plugins.reverse_cac_port");
 
-		} catch (ConfigurationException noConfig) {
-			logger.fatal("Configuration not found! " + noConfig.toString());
-		}
+		PropertyLoader config = new PropertyLoader(
+				JitIndexingController.class.getResource("/core.cfg"));
+		PORT = config.getInt("core.plugins.reverse_cac_port");
 	}
 
 	protected ServerSocket listenSocket;

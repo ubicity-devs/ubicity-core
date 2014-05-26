@@ -6,15 +6,13 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 
 import at.ac.ait.ubicity.commons.broker.BrokerConsumer;
 import at.ac.ait.ubicity.commons.broker.events.ConsumerPoison;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry;
 import at.ac.ait.ubicity.commons.broker.events.Metadata;
+import at.ac.ait.ubicity.commons.util.PropertyLoader;
 import at.ac.ait.ubicity.core.UbicityBrokerException.BrokerMsg;
 
 import com.lmax.disruptor.RingBuffer;
@@ -38,13 +36,9 @@ class UbicityBroker {
 	private static final Logger logger = Logger.getLogger(UbicityBroker.class);
 
 	static {
-		try {
-			Configuration config = new PropertiesConfiguration("commons.cfg");
-			QUEUE_SIZE = config.getInt("commons.lmax.queue_size");
-
-		} catch (ConfigurationException noConfig) {
-			logger.fatal("Configuration not found! " + noConfig.toString());
-		}
+		PropertyLoader config = new PropertyLoader(
+				UbicityBroker.class.getResource("/core.cfg"));
+		QUEUE_SIZE = config.getInt("core.lmax.queue_size");
 
 	}
 

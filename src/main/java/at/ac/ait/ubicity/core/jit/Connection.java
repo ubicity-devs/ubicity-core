@@ -77,7 +77,7 @@ class Connection extends Thread {
 			}
 		}
 
-		for (;;) {
+		while (true) {
 			try {
 				final Object o = in.readObject();
 				Command _command = (Command) o;
@@ -86,10 +86,7 @@ class Connection extends Thread {
 				if (!(_a == null))
 					out.writeObject(_a);
 			} catch (IOException | ClassNotFoundException ex) {
-				logger.fatal(
-						"Exception occurred while trying to read Command object for "
-								+ this.getName(), ex);
-				return;
+				;
 			} finally {
 				synchronized (vulture) {
 					vulture.notify();

@@ -19,15 +19,13 @@ package at.ac.ait.ubicity.core;
 
 import java.io.File;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.xeoh.plugins.base.PluginManager;
 import net.xeoh.plugins.base.impl.PluginManagerFactory;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 
 import at.ac.ait.ubicity.commons.broker.BrokerConsumer;
@@ -39,6 +37,7 @@ import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
 import at.ac.ait.ubicity.commons.protocol.Answer;
 import at.ac.ait.ubicity.commons.protocol.Command;
 import at.ac.ait.ubicity.commons.protocol.Medium;
+import at.ac.ait.ubicity.commons.util.PropertyLoader;
 import at.ac.ait.ubicity.core.jit.JitIndexingController;
 
 /**
@@ -68,18 +67,17 @@ public final class Core implements Runnable {
 	protected final PluginManager pluginManager = PluginManagerFactory
 			.createPluginManager();
 
-	protected URI pluginURI;
+	protected List<URI> pluginURIList = new ArrayList<URI>();
 
 	private Core() {
 
-		try {
-			// set necessary stuff for us to ueberhaupt be able to work
-			Configuration config = new PropertiesConfiguration("commons.cfg");
-			pluginURI = new File(config.getString("commons.plugins.directory"))
-					.toURI();
+		PropertyLoader config = new PropertyLoader(
+				Core.class.getResource("/core.cfg"));
 
-		} catch (ConfigurationException noConfig) {
-			logger.fatal("Configuration not found! " + noConfig.toString());
+		String[] pluginPath = config.getStringArray("core.plugins.directory");
+
+		for (String path : pluginPath) {
+			pluginURIList.add(new File(path).toURI());
 		}
 
 		singleton = this;
@@ -114,7 +112,10 @@ public final class Core implements Runnable {
 	public void run() {
 		while (true) {
 			try {
-				pluginManager.addPluginsFrom(pluginURI);
+
+				for (URI pluginURI : pluginURIList) {
+					pluginManager.addPluginsFrom(pluginURI);
+				}
 
 				Thread.sleep(3000);
 			} catch (InterruptedException _interrupt) {
@@ -232,7 +233,6 @@ public final class Core implements Runnable {
 				for (BaseUbicityPlugin p : plugins.values()) {
 					if (UbicityPlugin.class.isInstance(p)) {
 						deRegister(p);
-						wait(500);
 					}
 				}
 
@@ -240,7 +240,6 @@ public final class Core implements Runnable {
 				for (BaseUbicityPlugin p : plugins.values()) {
 					if (UbicityAddOn.class.isInstance(p)) {
 						deRegister(p);
-						wait(500);
 					}
 				}
 
