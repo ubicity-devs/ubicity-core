@@ -15,8 +15,10 @@ import at.ac.ait.ubicity.commons.broker.events.Metadata;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
 import at.ac.ait.ubicity.core.UbicityBrokerException.BrokerMsg;
 
+import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.ProducerType;
 
 /**
  * Global instance for holding all UbicityBrokers and management of the
@@ -53,7 +55,8 @@ class UbicityBroker {
 		if (!brokers.containsKey(consumer.getName())) {
 			// Construct the Disruptor
 			Disruptor<EventEntry> disruptor = new Disruptor<>(
-					() -> new EventEntry(), QUEUE_SIZE, executor);
+					() -> new EventEntry(), QUEUE_SIZE, executor,
+					ProducerType.SINGLE, new BlockingWaitStrategy());
 
 			disruptor.handleEventsWith(consumer);
 			disruptor.start();

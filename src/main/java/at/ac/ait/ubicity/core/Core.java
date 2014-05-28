@@ -243,6 +243,8 @@ public final class Core implements Runnable {
 					}
 				}
 
+				pluginManager.shutdown();
+
 			} catch (Exception | Error e) {
 				logger.fatal(
 						"caught some problem while preparing shutdown :: ", e);
