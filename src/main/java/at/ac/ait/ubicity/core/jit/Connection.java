@@ -51,7 +51,6 @@ class Connection extends Thread {
 			final int _priority, final Vulture _vulture) {
 
 		super(_threadGroup, "Connection " + connection_number++);
-		logger.info("new Connection from " + _client.getInetAddress());
 		this.setPriority(_priority);
 
 		client = _client;
@@ -61,9 +60,6 @@ class Connection extends Thread {
 
 	@Override
 	public void run() {
-
-		logger.info("Starting up connection from " + client.getInetAddress());
-
 		try {
 			in = new ObjectInputStream(client.getInputStream());
 			out = new ObjectOutputStream(client.getOutputStream());
@@ -81,7 +77,8 @@ class Connection extends Thread {
 			try {
 				final Object o = in.readObject();
 				Command _command = (Command) o;
-				logger.info("Received a command:: " + _command.toRESTString());
+				logger.info("Received a command:: " + _command.toRESTString()
+						+ " from " + client.getInetAddress());
 				Answer _a = Core.getInstance().forward(_command);
 				if (!(_a == null))
 					out.writeObject(_a);
