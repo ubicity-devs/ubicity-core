@@ -87,17 +87,15 @@ public final class Core implements Runnable {
 
 		// start the jit controller in order for the back end to react upon JIT
 		// indexing requests
-		logger.info("starting JitIndexingController");
 		JitIndexingController jitController = new JitIndexingController();
 		Thread jitThread = new Thread(jitController);
 		jitThread.setPriority(Thread.MAX_PRIORITY - 1);
 		jitThread.start();
-		logger.info("successfully started JitIndexingController");
+		logger.info("JitIndexingController successfully started ");
 
 	}
 
 	public static Core getInstance() {
-
 		if (singleton == null)
 			singleton = new Core();
 		return singleton;
@@ -191,7 +189,6 @@ public final class Core implements Runnable {
 	}
 
 	public Answer forward(Command _command) {
-		logger.info("got a Command forwarded::" + _command.toRESTString());
 		List<Medium> list = _command.getMedia().get();
 
 		for (int i = 0; i < list.size(); i++) {
