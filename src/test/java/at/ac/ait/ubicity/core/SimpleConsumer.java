@@ -3,7 +3,7 @@ package at.ac.ait.ubicity.core;
 import at.ac.ait.ubicity.commons.broker.BrokerConsumer;
 import at.ac.ait.ubicity.commons.broker.events.EventEntry;
 
-public class SimpleConsumer implements BrokerConsumer {
+public class SimpleConsumer extends BrokerConsumer {
 
 	private final String name;
 
@@ -17,8 +17,7 @@ public class SimpleConsumer implements BrokerConsumer {
 	}
 
 	@Override
-	public void onEvent(EventEntry event, long sequence, boolean endOfBatch)
-			throws Exception {
+	public void onReceived(EventEntry event) {
 		System.out.println(event.getId() + " - " + event.getData());
 	}
 }
