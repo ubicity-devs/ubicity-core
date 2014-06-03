@@ -28,7 +28,6 @@ import net.xeoh.plugins.base.util.PluginManagerUtil;
 
 import org.apache.log4j.Logger;
 
-import at.ac.ait.ubicity.commons.interfaces.BaseUbicityPlugin;
 import at.ac.ait.ubicity.commons.interfaces.ReverseControllableMediumPlugin;
 import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
 import at.ac.ait.ubicity.commons.protocol.Answer;
@@ -107,7 +106,7 @@ public final class UbicityCore implements Runnable {
 		List<Medium> list = _command.getMedia().get();
 
 		for (int i = 0; i < list.size(); i++) {
-			for (BaseUbicityPlugin p : getAllPlugins()) {
+			for (UbicityPlugin p : getAllPlugins()) {
 				if (p instanceof ReverseControllableMediumPlugin) {
 					ReverseControllableMediumPlugin plug = (ReverseControllableMediumPlugin) p;
 					if (plug.isResponsible(list.get(i))) {
@@ -124,14 +123,14 @@ public final class UbicityCore implements Runnable {
 	 * 
 	 * @return
 	 */
-	private static List<BaseUbicityPlugin> getAllPlugins() {
+	private static List<UbicityPlugin> getAllPlugins() {
 
-		List<BaseUbicityPlugin> plugList = new ArrayList<BaseUbicityPlugin>();
+		List<UbicityPlugin> plugList = new ArrayList<UbicityPlugin>();
 
 		for (Plugin plugin : pluginManager.getPlugins()) {
 
-			if (plugin instanceof BaseUbicityPlugin) {
-				plugList.add((BaseUbicityPlugin) plugin);
+			if (plugin instanceof UbicityPlugin) {
+				plugList.add((UbicityPlugin) plugin);
 			}
 		}
 
@@ -159,7 +158,7 @@ public final class UbicityCore implements Runnable {
 	static synchronized void prepareShutdown(final CoreShutdownHook _caller) {
 		if (_caller != null) {
 			try {
-				for (BaseUbicityPlugin p : getAllPlugins()) {
+				for (UbicityPlugin p : getAllPlugins()) {
 					if (UbicityPlugin.class.isInstance(p)) {
 						p.shutdown();
 					}
