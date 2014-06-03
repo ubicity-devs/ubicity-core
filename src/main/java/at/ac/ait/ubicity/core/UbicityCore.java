@@ -56,12 +56,10 @@ public final class UbicityCore implements Runnable {
 
 	private static final Logger logger = Logger.getLogger(UbicityCore.class);
 
-	private static UbicityCore singleton;
-
-	protected final PluginManagerUtil pluginManager = PluginManagerFactory
+	protected final static PluginManagerUtil pluginManager = PluginManagerFactory
 			.createPluginManagerX();
 
-	protected List<URI> pluginURIList = new ArrayList<URI>();
+	protected static List<URI> pluginURIList = new ArrayList<URI>();
 
 	private UbicityCore() {
 
@@ -74,16 +72,9 @@ public final class UbicityCore implements Runnable {
 			pluginURIList.add(new File(path).toURI());
 		}
 
-		singleton = this;
 		// register a shutdown hook
-		Runtime.getRuntime().addShutdownHook(
-				new Thread(new CoreShutdownHook(this)));
-	}
-
-	public static UbicityCore getInstance() {
-		if (singleton == null)
-			singleton = new UbicityCore();
-		return singleton;
+		Runtime.getRuntime()
+				.addShutdownHook(new Thread(new CoreShutdownHook()));
 	}
 
 	@Override
@@ -106,15 +97,23 @@ public final class UbicityCore implements Runnable {
 		}
 	}
 
-	public Answer forward(Command _command) {
+	/**
+	 * Forwards the command to responsible plugin.
+	 * 
+	 * @param _command
+	 * @return
+	 */
+	public static Answer forward(Command _command) {
 		List<Medium> list = _command.getMedia().get();
 
 		for (int i = 0; i < list.size(); i++) {
-			Medium m = list.get(i);
 			for (BaseUbicityPlugin p : getAllPlugins()) {
-				if (p instanceof ReverseControllableMediumPlugin)
-					return ((ReverseControllableMediumPlugin) p)
-							.execute(_command);
+				if (p instanceof ReverseControllableMediumPlugin) {
+					ReverseControllableMediumPlugin plug = (ReverseControllableMediumPlugin) p;
+					if (plug.isResponsible(list.get(i))) {
+						return plug.execute(_command);
+					}
+				}
 			}
 		}
 		return Answer.FAIL;
@@ -125,7 +124,7 @@ public final class UbicityCore implements Runnable {
 	 * 
 	 * @return
 	 */
-	private List<BaseUbicityPlugin> getAllPlugins() {
+	private static List<BaseUbicityPlugin> getAllPlugins() {
 
 		List<BaseUbicityPlugin> plugList = new ArrayList<BaseUbicityPlugin>();
 
@@ -145,10 +144,8 @@ public final class UbicityCore implements Runnable {
 	 * @param args
 	 */
 	public final static void main(String[] args) {
-		UbicityCore c = UbicityCore.getInstance();
+		UbicityCore c = new UbicityCore();
 		Thread coreThread = new Thread(c);
-		coreThread.setPriority(Thread.MIN_PRIORITY + 1);
-		coreThread.setName("ubicity core execution context");
 		coreThread.start();
 	}
 
@@ -159,7 +156,7 @@ public final class UbicityCore implements Runnable {
 	 * @param _caller
 	 *            the CoreShutdownHook calling us.
 	 */
-	final synchronized void prepareShutdown(final CoreShutdownHook _caller) {
+	static synchronized void prepareShutdown(final CoreShutdownHook _caller) {
 		if (_caller != null) {
 			try {
 				for (BaseUbicityPlugin p : getAllPlugins()) {
@@ -171,8 +168,7 @@ public final class UbicityCore implements Runnable {
 				pluginManager.shutdown();
 
 			} catch (Exception | Error e) {
-				logger.fatal(
-						"caught some problem while preparing shutdown :: ", e);
+				logger.fatal("caught some problem while preparing shutdown", e);
 			}
 		}
 	}
@@ -180,18 +176,12 @@ public final class UbicityCore implements Runnable {
 
 final class CoreShutdownHook implements Runnable {
 
-	private final UbicityCore core;
-
 	private static final Logger logger = Logger
 			.getLogger(CoreShutdownHook.class.getName());
-
-	public CoreShutdownHook(UbicityCore _core) {
-		core = _core;
-	}
 
 	@Override
 	public void run() {
 		logger.warn("Shutting down core");
-		core.prepareShutdown(this);
+		UbicityCore.prepareShutdown(this);
 	}
 }
