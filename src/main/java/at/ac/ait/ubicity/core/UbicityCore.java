@@ -61,7 +61,6 @@ public final class UbicityCore implements Runnable {
 	protected static List<URI> pluginURIList = new ArrayList<URI>();
 
 	private UbicityCore() {
-
 		PropertyLoader config = new PropertyLoader(
 				UbicityCore.class.getResource("/core.cfg"));
 
@@ -82,16 +81,15 @@ public final class UbicityCore implements Runnable {
 			try {
 				for (URI pluginURI : pluginURIList) {
 					pluginManager.addPluginsFrom(pluginURI);
+					Thread.sleep(1000);
 				}
-				Thread.sleep(2000);
 
 			} catch (InterruptedException _interrupt) {
 				Thread.interrupted();
 			} catch (Error ee) {
 				logger.fatal("caught an Error while running : " + ee.toString());
-			} catch (RuntimeException prettyBad) {
-				logger.fatal("caught a runtime exception while running :: "
-						+ prettyBad.toString());
+			} catch (RuntimeException e) {
+				logger.fatal("caught a runtime exception while running", e);
 			}
 		}
 	}
