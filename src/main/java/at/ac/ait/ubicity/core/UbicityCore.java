@@ -28,7 +28,7 @@ import net.xeoh.plugins.base.util.PluginManagerUtil;
 
 import org.apache.log4j.Logger;
 
-import at.ac.ait.ubicity.commons.interfaces.ReverseControllableMediumPlugin;
+import at.ac.ait.ubicity.commons.interfaces.JiTPlugin;
 import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
 import at.ac.ait.ubicity.commons.protocol.Answer;
 import at.ac.ait.ubicity.commons.protocol.Command;
@@ -105,8 +105,8 @@ public final class UbicityCore implements Runnable {
 
 		for (int i = 0; i < list.size(); i++) {
 			for (UbicityPlugin p : getAllPlugins()) {
-				if (p instanceof ReverseControllableMediumPlugin) {
-					ReverseControllableMediumPlugin plug = (ReverseControllableMediumPlugin) p;
+				if (p instanceof JiTPlugin) {
+					JiTPlugin plug = (JiTPlugin) p;
 					if (plug.isResponsible(list.get(i))) {
 						return plug.execute(_command);
 					}
