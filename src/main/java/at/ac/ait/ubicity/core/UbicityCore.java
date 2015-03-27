@@ -30,39 +30,21 @@ import org.apache.log4j.Logger;
 
 import at.ac.ait.ubicity.commons.interfaces.JiTPlugin;
 import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
-import at.ac.ait.ubicity.commons.protocol.Answer;
-import at.ac.ait.ubicity.commons.protocol.Command;
-import at.ac.ait.ubicity.commons.protocol.Medium;
+import at.ac.ait.ubicity.commons.jit.Action;
+import at.ac.ait.ubicity.commons.jit.Answer;
+import at.ac.ait.ubicity.commons.jit.Answer.Status;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
 
-/**
- *
- * @author Jan van Oort
- * @version 0.1
- * 
- *          This class is the core of the ubicity platform. It does not perform
- *          actual data production, nor does it process any data. Core is a
- *          rather dumb plugin platform, after the K.I.S.S. principle, where
- *          classes implementing the UbicityPlugin interface may register
- *          themselves and <b>offer</b> JSONObjects. These JSONObjects are then
- *          placed -- by a separate JSONProcuer thread dedicated to the plugin
- *          -- into an ArrayBlockingQueue, of which there is one per plugin. A
- *          JSONConsumer thread, also dedicated to the plugin, then takes the
- *          JSONObject and offers it to elasticsearch for indexing.
- *
- */
 public final class UbicityCore implements Runnable {
 
 	private static final Logger logger = Logger.getLogger(UbicityCore.class);
 
-	protected final static PluginManagerUtil pluginManager = PluginManagerFactory
-			.createPluginManagerX();
+	protected final static PluginManagerUtil pluginManager = PluginManagerFactory.createPluginManagerX();
 
 	protected static List<URI> pluginURIList = new ArrayList<URI>();
 
 	private UbicityCore() {
-		PropertyLoader config = new PropertyLoader(
-				UbicityCore.class.getResource("/core.cfg"));
+		PropertyLoader config = new PropertyLoader(UbicityCore.class.getResource("/core.cfg"));
 
 		String[] pluginPath = config.getStringArray("core.plugins.directory");
 
@@ -71,8 +53,7 @@ public final class UbicityCore implements Runnable {
 		}
 
 		// register a shutdown hook
-		Runtime.getRuntime()
-				.addShutdownHook(new Thread(new CoreShutdownHook()));
+		Runtime.getRuntime().addShutdownHook(new Thread(new CoreShutdownHook()));
 	}
 
 	@Override
@@ -97,23 +78,21 @@ public final class UbicityCore implements Runnable {
 	/**
 	 * Forwards the command to responsible plugin.
 	 * 
-	 * @param _command
+	 * @param action
 	 * @return
 	 */
-	public static Answer forward(Command _command) {
-		List<Medium> list = _command.getMedia().get();
+	public static Answer forward(Action action) {
 
-		for (int i = 0; i < list.size(); i++) {
-			for (UbicityPlugin p : getAllPlugins()) {
-				if (p instanceof JiTPlugin) {
-					JiTPlugin plug = (JiTPlugin) p;
-					if (plug.isResponsible(list.get(i))) {
-						return plug.execute(_command);
-					}
+		for (UbicityPlugin p : getAllPlugins()) {
+			if (p instanceof JiTPlugin) {
+				// Check if the intendend receiver matches the plugin name
+				if (action.getReceiver().equalsIgnoreCase(p.getName())) {
+					return ((JiTPlugin) p).process(action);
 				}
 			}
 		}
-		return Answer.FAIL;
+
+		return new Answer(action, Status.COMMAND_NOT_RECOGNIZED);
 	}
 
 	/**
@@ -147,8 +126,7 @@ public final class UbicityCore implements Runnable {
 	}
 
 	/**
-	 * Can only be called by an instance of CoreShutdownHook. Prepares an
-	 * orderly Core exit.
+	 * Can only be called by an instance of CoreShutdownHook. Prepares an orderly Core exit.
 	 * 
 	 * @param _caller
 	 *            the CoreShutdownHook calling us.
@@ -173,8 +151,7 @@ public final class UbicityCore implements Runnable {
 
 final class CoreShutdownHook implements Runnable {
 
-	private static final Logger logger = Logger
-			.getLogger(CoreShutdownHook.class.getName());
+	private static final Logger logger = Logger.getLogger(CoreShutdownHook.class.getName());
 
 	@Override
 	public void run() {
