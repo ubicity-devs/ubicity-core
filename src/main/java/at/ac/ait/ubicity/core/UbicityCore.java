@@ -28,14 +28,16 @@ import net.xeoh.plugins.base.util.PluginManagerUtil;
 
 import org.apache.log4j.Logger;
 
-import at.ac.ait.ubicity.commons.interfaces.JiTPlugin;
+import at.ac.ait.ubicity.commons.broker.JiTBroker;
+import at.ac.ait.ubicity.commons.interfaces.JiTConsumerPlugin;
+import at.ac.ait.ubicity.commons.interfaces.JiTDispatcher;
 import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
 import at.ac.ait.ubicity.commons.jit.Action;
 import at.ac.ait.ubicity.commons.jit.Answer;
 import at.ac.ait.ubicity.commons.jit.Answer.Status;
 import at.ac.ait.ubicity.commons.util.PropertyLoader;
 
-public final class UbicityCore implements Runnable {
+public class UbicityCore implements JiTDispatcher {
 
 	private static final Logger logger = Logger.getLogger(UbicityCore.class);
 
@@ -52,17 +54,19 @@ public final class UbicityCore implements Runnable {
 			pluginURIList.add(new File(path).toURI());
 		}
 
+		// set Core as dispatcher
+		JiTBroker.registerDispatcher(this);
+
 		// register a shutdown hook
 		Runtime.getRuntime().addShutdownHook(new Thread(new CoreShutdownHook()));
 	}
 
-	@Override
-	public void run() {
+	public void start() {
 		while (true) {
 			try {
 				for (URI pluginURI : pluginURIList) {
-					pluginManager.addPluginsFrom(pluginURI);
-					Thread.sleep(1000);
+					loadNewPlugins(pluginURI);
+					Thread.sleep(10000);
 				}
 
 			} catch (InterruptedException _interrupt) {
@@ -75,20 +79,12 @@ public final class UbicityCore implements Runnable {
 		}
 	}
 
-	/**
-	 * Forwards the command to responsible plugin.
-	 * 
-	 * @param action
-	 * @return
-	 */
-	public static Answer forward(Action action) {
-
-		for (UbicityPlugin p : getAllPlugins()) {
-			if (p instanceof JiTPlugin) {
-				// Check if the intendend receiver matches the plugin name
-				if (action.getReceiver().equalsIgnoreCase(p.getName())) {
-					return ((JiTPlugin) p).process(action);
-				}
+	@Override
+	public Answer distribute(Action action) {
+		for (UbicityPlugin p : getPlugins(JiTConsumerPlugin.class)) {
+			// Check if the intendend receiver matches the plugin name
+			if (action.getReceiver().equalsIgnoreCase(p.getName())) {
+				return ((JiTConsumerPlugin) p).process(action);
 			}
 		}
 
@@ -96,17 +92,24 @@ public final class UbicityCore implements Runnable {
 	}
 
 	/**
+	 * Checks URI for new Plugins and set manatory fields.
+	 * 
+	 * @return
+	 */
+	private void loadNewPlugins(URI path) {
+		pluginManager.addPluginsFrom(path);
+	}
+
+	/**
 	 * Returns all Plugins which are loaded.
 	 * 
 	 * @return
 	 */
-	private static List<UbicityPlugin> getAllPlugins() {
+	private static List<UbicityPlugin> getPlugins(Class<?> inst) {
 
 		List<UbicityPlugin> plugList = new ArrayList<UbicityPlugin>();
-
 		for (Plugin plugin : pluginManager.getPlugins()) {
-
-			if (plugin instanceof UbicityPlugin) {
+			if (inst.isAssignableFrom(plugin.getClass())) {
 				plugList.add((UbicityPlugin) plugin);
 			}
 		}
@@ -121,8 +124,7 @@ public final class UbicityCore implements Runnable {
 	 */
 	public final static void main(String[] args) {
 		UbicityCore c = new UbicityCore();
-		Thread coreThread = new Thread(c);
-		coreThread.start();
+		c.start();
 	}
 
 	/**
@@ -134,10 +136,8 @@ public final class UbicityCore implements Runnable {
 	static synchronized void prepareShutdown(final CoreShutdownHook _caller) {
 		if (_caller != null) {
 			try {
-				for (UbicityPlugin p : getAllPlugins()) {
-					if (UbicityPlugin.class.isInstance(p)) {
-						p.shutdown();
-					}
+				for (UbicityPlugin p : getPlugins(UbicityPlugin.class)) {
+					p.shutdown();
 				}
 
 				pluginManager.shutdown();
@@ -150,7 +150,6 @@ public final class UbicityCore implements Runnable {
 }
 
 final class CoreShutdownHook implements Runnable {
-
 	private static final Logger logger = Logger.getLogger(CoreShutdownHook.class.getName());
 
 	@Override
