@@ -62,32 +62,45 @@ public class UbicityCore implements JiTDispatcher {
 	}
 
 	public void start() {
-		while (true) {
-			try {
-				for (URI pluginURI : pluginURIList) {
-					loadNewPlugins(pluginURI);
-					Thread.sleep(10000);
-				}
-
-			} catch (InterruptedException _interrupt) {
-				Thread.interrupted();
-			} catch (Error ee) {
-				logger.fatal("caught an Error while running : " + ee.toString());
-			} catch (RuntimeException e) {
-				logger.fatal("caught a runtime exception while running", e);
-			}
+		for (URI pluginURI : pluginURIList) {
+			loadNewPlugins(pluginURI);
 		}
 	}
 
 	@Override
 	public Answer distribute(Action action) {
-		for (UbicityPlugin p : getPlugins(JiTConsumerPlugin.class)) {
-			// Check if the intendend receiver matches the plugin name
-			if (action.getReceiver().equalsIgnoreCase(p.getName())) {
-				return ((JiTConsumerPlugin) p).process(action);
+
+		// Handle commands with core functionality
+		if (action.getReceiver().equalsIgnoreCase("ubicity-core")) {
+			return process(action);
+		} else {
+			for (UbicityPlugin p : getPlugins(JiTConsumerPlugin.class)) {
+				// Check if the intendend receiver matches the plugin name
+				if (action.getReceiver().equalsIgnoreCase(p.getName())) {
+					return ((JiTConsumerPlugin) p).process(action);
+				}
 			}
 		}
 
+		return new Answer(action, Status.COMMAND_NOT_RECOGNIZED);
+	}
+
+	/**
+	 * JiT functionality on core level.
+	 * 
+	 * @param action
+	 * @return
+	 */
+	private Answer process(Action action) {
+
+		if ("list".equalsIgnoreCase(action.getCommand())) {
+			List<String> pluginNames = new ArrayList<String>();
+			for (UbicityPlugin p : getPlugins(UbicityPlugin.class)) {
+				pluginNames.add(p.getName());
+			}
+			return new Answer(action, Status.PROCESSED, pluginNames.toString());
+
+		}
 		return new Answer(action, Status.COMMAND_NOT_RECOGNIZED);
 	}
 
