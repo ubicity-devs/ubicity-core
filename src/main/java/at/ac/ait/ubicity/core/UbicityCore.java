@@ -28,7 +28,10 @@ import net.xeoh.plugins.base.util.PluginManagerUtil;
 
 import org.apache.log4j.Logger;
 
+import at.ac.ait.ubicity.commons.broker.BrokerConsumer;
+import at.ac.ait.ubicity.commons.broker.BrokerProducer;
 import at.ac.ait.ubicity.commons.broker.JiTBroker;
+import at.ac.ait.ubicity.commons.interfaces.CronPlugin;
 import at.ac.ait.ubicity.commons.interfaces.JiTConsumerPlugin;
 import at.ac.ait.ubicity.commons.interfaces.JiTDispatcher;
 import at.ac.ait.ubicity.commons.interfaces.UbicityPlugin;
@@ -146,12 +149,27 @@ public class UbicityCore implements JiTDispatcher {
 	 * @param _caller
 	 *            the CoreShutdownHook calling us.
 	 */
-	static synchronized void prepareShutdown(final CoreShutdownHook _caller) {
-		if (_caller != null) {
+	static synchronized void prepareShutdown(final CoreShutdownHook caller) {
+		if (caller != null) {
 			try {
-				for (UbicityPlugin p : getPlugins(UbicityPlugin.class)) {
-					p.shutdown();
-				}
+
+				getPlugins(UbicityPlugin.class).forEach((p) -> {
+					if (BrokerProducer.class.isInstance(p) || CronPlugin.class.isInstance(p)) {
+						logger.info("Shutting down Producer: " + p.getName());
+						p.shutdown();
+					}
+				});
+
+				Thread.sleep(100);
+
+				getPlugins(UbicityPlugin.class).forEach((p) -> {
+					if (BrokerConsumer.class.isInstance(p)) {
+						logger.info("Shutting down Consumer: " + p.getName());
+						p.shutdown();
+					}
+				});
+
+				Thread.sleep(100);
 
 				pluginManager.shutdown();
 
@@ -167,7 +185,7 @@ final class CoreShutdownHook implements Runnable {
 
 	@Override
 	public void run() {
-		logger.warn("Shutting down core");
+		logger.warn("Shutting down Ubicity");
 		UbicityCore.prepareShutdown(this);
 	}
 }
