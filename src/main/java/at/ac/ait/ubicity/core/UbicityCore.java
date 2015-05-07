@@ -65,8 +65,15 @@ public class UbicityCore implements JiTDispatcher {
 	}
 
 	public void start() {
-		for (URI pluginURI : pluginURIList) {
-			loadNewPlugins(pluginURI);
+		while (true) {
+			try {
+				for (URI pluginURI : pluginURIList) {
+					loadNewPlugins(pluginURI);
+					Thread.sleep(1000);
+				}
+			} catch (Exception ee) {
+				logger.fatal("caught an Error while running : " + ee.toString());
+			}
 		}
 	}
 
